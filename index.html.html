@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>农作物浇水计算器</title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: system-ui, -apple-system, sans-serif;
+    }
+    body {
+        background-color: #f5f7fa;
+        padding: 15px;
+    }
+    .card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 18px;
+        margin-bottom: 15px;
+    }
+    h1 {
+        text-align: center;
+        font-size: 20px;
+        margin-bottom: 20px;
+        color: #333;
+        font-weight: 600;
+    }
+    h2 {
+        text-align: center;
+        font-size: 17px;
+        margin: 10px 0 15px;
+        color: #333;
+        font-weight: 600;
+    }
+    .form-group {
+        margin-bottom: 16px;
+    }
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #555;
+        font-size: 14px;
+    }
+    .flat-radio {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .flat-radio label {
+        padding: 6px 12px;
+        background: #f1f3f6;
+        border-radius: 4px;
+        font-size: 14px;
+        margin: 0;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+    .flat-radio input {
+        display: none;
+    }
+    .flat-radio input:checked + label {
+        background: #27ae60;
+        color: #fff;
+    }
+    input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        font-size: 15px;
+        background: #fafafa;
+        margin-top: 10px;
+    }
+    .time-input-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    .time-input-row input {
+        flex: 1;
+        margin-top: 0;
+    }
+    button {
+        width: 100%;
+        padding: 12px;
+        background-color: #27ae60;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: 500;
+        margin-top: 5px;
+    }
+    button:active {
+        background-color: #219653;
+    }
+    .btn-blue {
+        background-color: #3498db !important;
+    }
+    .result {
+        display: none;
+    }
+    .title-tip {
+        font-size: 15px;
+        font-weight: 500;
+        margin: 10px 0 10px;
+        color: #333;
+    }
+    .time-item {
+        padding: 11px;
+        background: #f8f9fa;
+        margin: 6px 0;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #333;
+        border-left: 3px solid #27ae60;
+    }
+    .mature-item {
+        padding: 12px;
+        background: #fef2f2;
+        border-radius: 6px;
+        font-size: 15px;
+        font-weight: 500;
+        color: #c0392b;
+        text-align: center;
+        margin-bottom: 8px;
+    }
+    .result-text {
+        padding: 12px;
+        background: #e8f4fd;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #2980b9;
+        margin-top: 10px;
+        border-left: 3px solid #3498db;
+        /* 核心：默认显示，不自动隐藏 */
+        display: block;
+    }
+    .required {
+        color: #e74c3c;
+        font-size: 12px;
+        margin-top: 5px;
+        display: none;
+    }
+    #customTime {
+        display:none;
+    }
+    #remainInputBox {
+        display: none;
+    }
+</style>
+
+<body>
+    <!-- 原有模块：完全无改动 -->
+    <div class="card">
+        <h1>🌾 农作物浇水计算器</h1>
+        <div class="form-group">
+            <label>作物时长(小时)</label>
+            <div class="flat-radio">
+                <input type="radio" name="cropTime" id="t16" value="16">
+                <label for="t16">16</label>
+                <input type="radio" name="cropTime" id="t20" value="20" checked>
+                <label for="t20">20</label>
+                <input type="radio" name="cropTime" id="t28" value="28">
+                <label for="t28">28</label>
+                <input type="radio" name="cropTime" id="tcus" value="custom">
+                <label for="tcus">自定义</label>
+            </div>
+            <input type="number" id="customTime" placeholder="输入自定义小时数" min="1">
+        </div>
+
+        <div class="form-group">
+            <label>好友人数</label>
+            <div class="flat-radio">
+                <input type="radio" name="friendNum" id="f0" value="0">
+                <label for="f0">0人</label>
+                <input type="radio" name="friendNum" id="f1" value="1">
+                <label for="f1">1人</label>
+                <input type="radio" name="friendNum" id="f2" value="2">
+                <label for="f2">2人</label>
+                <input type="radio" name="friendNum" id="f3" value="3">
+                <label for="f3">3人</label>
+                <input type="radio" name="friendNum" id="f4" value="4" checked>
+                <label for="f4">4人</label>
+            </div>
+        </div>
+        <button onclick="calculate()">立即计算</button>
+    </div>
+
+    <div class="card result" id="resultCard">
+        <div class="title-tip" id="matureTitle">🌱 最早可收获时间</div>
+        <div id="matureTimeShow" class="mature-item"></div>
+        <div class="title-tip">⏰ 三次浇水时间</div>
+        <div id="waterTimes"></div>
+    </div>
+
+    <!-- 下次浇水时间计算模块 -->
+    <div class="card">
+        <h2>⏱️ 下次浇水时间计算</h2>
+        <div class="form-group">
+            <label>计算选项</label>
+            <div class="flat-radio">
+                <input type="radio" name="waterOpt" id="opt1" value="over31" checked>
+                <label for="opt1" id="labelOpt1">剩余时间大于0小时0分(31%)</label>
+                <input type="radio" name="waterOpt" id="opt2" value="input">
+                <label for="opt2">输入剩余时间</label>
+            </div>
+        </div>
+
+        <div id="remainInputBox">
+            <label>剩余成熟时间（必填）</label>
+            <div class="time-input-row">
+                <input type="number" id="remainH" placeholder="小时" min="0">
+                <input type="number" id="remainM" placeholder="分钟" min="0" max="59">
+            </div>
+            <div class="required" id="tipRequired">请输入剩余时间！</div>
+        </div>
+
+        <button class="btn-blue" onclick="calcNextWater()">计算下次浇水时间</button>
+        <div id="nextResult" class="result-text">暂无计算结果</div>
+    </div>
+
+<script>
+const CACHE_KEY = 'cropCalcCache';
+let globalTotalHours = 20;
+
+window.onload = function(){
+    loadCache();
+    bindAllEvents();
+    updateRatioText();
+}
+
+// 绑定所有事件
+function bindAllEvents(){
+    // 作物时长切换
+    document.querySelectorAll('input[name="cropTime"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            document.getElementById('customTime').style.display = radio.value === 'custom' ? 'block' : 'none';
+            syncGlobalTotalHours();
+            updateRatioText();
+        });
+    });
+    // 自定义时长输入
+    document.getElementById('customTime').addEventListener('input', () => {
+        syncGlobalTotalHours();
+        updateRatioText();
+    });
+    // 下次浇水选项切换 + 自动填充31%时间
+    document.querySelectorAll('input[name="waterOpt"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            const isInput = radio.value === 'input';
+            document.getElementById('remainInputBox').style.display = isInput ? 'block' : 'none';
+            document.getElementById('tipRequired').style.display = 'none';
+            if(isInput) fillRemainTime();
+        });
+    });
+}
+
+// 同步全局作物时长
+function syncGlobalTotalHours(){
+    const cropVal = document.querySelector('input[name="cropTime"]:checked').value;
+    globalTotalHours = cropVal === 'custom' ? (parseFloat(document.getElementById('customTime').value) || 0) : parseFloat(cropVal);
+}
+
+// 时分格式化
+function fmtHM(hours){
+    let h = Math.floor(hours);
+    let m = Math.round((hours - h) * 60);
+    return `${h}小时${m}分`;
+}
+
+// 完整时间格式化
+function fmtFull(d) {
+    return d.toLocaleString('zh-CN', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+}
+
+// 动态更新选项1文字
+function updateRatioText(){
+    const t31 = globalTotalHours * 0.31;
+    document.getElementById('labelOpt1').innerText = `剩余时间大于${fmtHM(t31)}(31%)`;
+}
+
+// 自动填充31%剩余时间到输入框
+function fillRemainTime(){
+    const t31 = globalTotalHours * 0.31;
+    const h = Math.floor(t31);
+    const m = Math.round((t31 - h) * 60);
+    document.getElementById('remainH').value = h;
+    document.getElementById('remainM').value = m;
+}
+
+// ==================== 缓存优化：永久保留下次浇水结果 ====================
+function loadCache(){
+    let cacheStr = localStorage.getItem(CACHE_KEY);
+    if(!cacheStr) {
+        document.getElementById('t20').checked = true;
+        document.getElementById('f4').checked = true;
+        syncGlobalTotalHours();
+        updateRatioText();
+        return;
+    }
+    let cache = JSON.parse(cacheStr);
+    // 恢复主模块数据
+    if(cache.cropVal){
+        document.querySelector(`input[name="cropTime"][value="${cache.cropVal}"]`).checked = true;
+        if(cache.cropVal === 'custom'){
+            document.getElementById('customTime').style.display = 'block';
+            document.getElementById('customTime').value = cache.customNum || '';
+        }
+    }
+    if(cache.friendNum !== undefined){
+        document.querySelector(`input[name="friendNum"][value="${cache.friendNum}"]`).checked = true;
+    }
+    syncGlobalTotalHours();
+    updateRatioText();
+    if(cache.time1 && cache.time2 && cache.time3 && cache.mature){
+        renderResult(cache.time1,cache.time2,cache.time3,cache.mature);
+    }
+    // 🔥 核心：恢复下次浇水计算结果（永久显示）
+    if(cache.nextWaterResult){
+        document.getElementById('nextResult').innerText = cache.nextWaterResult;
+    }
+}
+
+// 保存缓存（新增下次浇水结果）
+function saveCache(cropVal,customNum,friendNum,t1,t2,t3,tm,nextResult){
+    let cache = {
+        cropVal, customNum, friendNum,
+        time1:t1, time2:t2, time3:t3, mature:tm,
+        nextWaterResult: nextResult // 保存下次浇水结果
+    };
+    localStorage.setItem(CACHE_KEY,JSON.stringify(cache));
+}
+
+// ==================== 原有主计算逻辑 ====================
+function renderResult(t1,t2,t3,tm){
+    const time1 = new Date(t1); const time2 = new Date(t2);
+    const time3 = new Date(t3); const matureTime = new Date(tm);
+    document.getElementById('resultCard').style.display = 'block';
+    document.getElementById('waterTimes').innerHTML = `
+        <div class="time-item">第1次浇水：${fmtFull(time1)}</div>
+        <div class="time-item">第2次浇水：${fmtFull(time2)}</div>
+        <div class="time-item">第3次浇水：${fmtFull(time3)}</div>
+    `;
+    document.getElementById('matureTimeShow').innerText = fmtFull(matureTime);
+    let now = new Date();
+    let diffHour = (matureTime - now) / (1000 * 3600);
+    if(diffHour < 0) diffHour = 0;
+    document.getElementById('matureTitle').innerText = `🌱 最早可收获时间（${fmtHM(diffHour)}）`;
+}
+
+function calculate() {
+    let totalHours;
+    const cropTimeRadio = document.querySelector('input[name="cropTime"]:checked').value;
+    if (cropTimeRadio === 'custom') {
+        totalHours = parseFloat(document.getElementById('customTime').value);
+        if (!totalHours || totalHours <= 0) { alert('请输入有效的时长！'); return; }
+    } else { totalHours = parseFloat(cropTimeRadio); }
+    globalTotalHours = totalHours;
+    updateRatioText();
+    const friendCnt = parseInt(document.querySelector('input[name="friendNum"]:checked').value);
+    const friendPct = friendCnt * 2.5;
+    const startTime = new Date();
+    const perWait = 6; const perReduce = 1.75; const baseLeftAfterTwoRound = 31;
+    const pct1 = 24; const pct2 = 48;
+    const time1 = new Date(startTime.getTime() + totalHours * pct1 / 100 * 3600 * 1000);
+    const time2 = new Date(startTime.getTime() + totalHours * pct2 / 100 * 3600 * 1000);
+    let remainLeft = baseLeftAfterTwoRound - friendPct;
+    if(remainLeft < 0) remainLeft = 0;
+    let lastWaitPct = remainLeft * perWait / (perWait + perReduce);
+    const pct3 = 48 + lastWaitPct;
+    const time3 = new Date(startTime.getTime() + totalHours * pct3 / 100 * 3600 * 1000);
+    
+    // 保留原有下次浇水结果，不覆盖
+    const cache = JSON.parse(localStorage.getItem(CACHE_KEY)) || {};
+    renderResult(time1,time2,time3,time3);
+    saveCache(cropTimeRadio, cropTimeRadio==='custom'?totalHours:'', friendCnt, time1,time2,time3,time3, cache.nextWaterResult);
+}
+
+// ==================== 下次浇水计算（结果永久缓存） ====================
+function calcNextWater() {
+    const total = globalTotalHours;
+    const now = new Date();
+    const opt = document.querySelector('input[name="waterOpt"]:checked').value;
+    const tipDom = document.getElementById('tipRequired');
+    tipDom.style.display = 'none';
+
+    const RATIO_24 = 0.24;
+    const RATIO_31 = 0.31;
+    const RATIO_6 = 0.06;
+    const FORMULA = 6 / (6 + 1.75);
+    let waitHours = 0;
+
+    if(opt === 'over31'){
+        waitHours = total * RATIO_24;
+    } else {
+        const h = parseFloat(document.getElementById('remainH').value) || 0;
+        const m = parseFloat(document.getElementById('remainM').value) || 0;
+        const remain = h + m / 60;
+        if(remain <= 0){ tipDom.style.display = 'block'; return; }
+        const remainRatio = remain / total;
+
+        if(remainRatio > RATIO_31) waitHours = total * RATIO_24;
+        else if(remainRatio < RATIO_6) waitHours = remain;
+        else waitHours = remain * FORMULA;
+    }
+
+    const nextTime = new Date(now.getTime() + waitHours * 3600 * 1000);
+    const resultText = `⏰ 下次浇水时间：${fmtFull(nextTime)}`;
+    // 显示结果 + 缓存结果
+    document.getElementById('nextResult').innerText = resultText;
+    // 保存到本地缓存
+    const cache = JSON.parse(localStorage.getItem(CACHE_KEY)) || {};
+    saveCache(cache.cropVal, cache.customNum, cache.friendNum, cache.time1,cache.time2,cache.time3,cache.mature, resultText);
+}
+</script>
+</body>
+</html>
